@@ -2,6 +2,7 @@ version: '3.8'
 
 networks:
   app_net:
+    name: task-tracker_app_net
     external: true
 
 services:
@@ -33,7 +34,8 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     networks:
       - app_net
-loki:
+
+  loki:
     image: grafana/loki:2.9.0
     container_name: loki
     ports:

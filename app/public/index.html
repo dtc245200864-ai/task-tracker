@@ -10,8 +10,8 @@
     form { display: flex; gap: 10px; margin-bottom: 20px; }
     input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
     button { background: #27ae60; color: white; border: none; cursor: pointer; }
-    ul { list-style: none; padding: 0; }
-    li { background: #ecf0f1; margin-bottom: 10px; padding: 12px; border-radius: 4px; display: flex; justify-content: space-between; }
+    ul { list-style: none; padding: 0; margin-top: 20px; }
+    li { background: #ecf0f1; margin-bottom: 10px; padding: 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -19,7 +19,7 @@
     <h1>📋 Quản Lý Công Việc (Task Tracker)</h1>
     <form id="taskForm">
       <input type="text" id="title" placeholder="Tên công việc..." required style="flex:2;">
-      <input type="date" id="deadline" required>
+      <input type="date" id="deadline">
       <select id="status">
         <option value="Pending">Pending</option>
         <option value="In Progress">In Progress</option>
@@ -31,22 +31,28 @@
   </div>
   <script>
     async function loadTasks() {
-      const res = await fetch('/api/tasks');
-      const tasks = await res.json();
-      document.getElementById('taskList').innerHTML = tasks.map(t => 
-        `<li><strong>${t.title}</strong> <span>Hạn: ${t.deadline ? t.deadline.split('T')[0] : 'N/A'} [${t.status}]</span></li>`
-      ).join('');
+      try {
+        const res = await fetch('/api/tasks');
+        const tasks = await res.json();
+        if (Array.isArray(tasks)) {
+          document.getElementById('taskList').innerHTML = tasks.map(t => 
+            `<li><strong>${t.title}</strong> <span>Hạn: ${t.deadline ? String(t.deadline).split('T')[0] : 'Không có'} [${t.status}]</span></li>`
+          ).join('');
+        }
+      } catch (err) {
+        console.error('Lỗi tải danh sách:', err);
+      }
     }
     document.getElementById('taskForm').onsubmit = async (e) => {
       e.preventDefault();
+      const title = document.getElementById('title').value;
+      const deadline = document.getElementById('deadline').value;
+      const status = document.getElementById('status').value;
+      
       await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: document.getElementById('title').value,
-          deadline: document.getElementById('deadline').value,
-          status: document.getElementById('status').value
-        })
+        body: JSON.stringify({ title, deadline, status })
       });
       document.getElementById('title').value = '';
       loadTasks();

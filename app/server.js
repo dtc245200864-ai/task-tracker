@@ -14,7 +14,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'SecurePassword123!',
 });
 
-async function initDB() {
+async function ensureTable() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tasks (
@@ -25,15 +25,14 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✅ PostgreSQL Database Initialized Successfully');
   } catch (err) {
-    console.error('❌ DB Init Error:', err);
+    console.error('Table error:', err.message);
   }
 }
-initDB();
 
 app.get('/api/tasks', async (req, res) => {
   try {
+    await ensureTable();
     const result = await pool.query('SELECT * FROM tasks ORDER BY id DESC');
     res.json(result.rows);
   } catch (err) {
@@ -44,9 +43,11 @@ app.get('/api/tasks', async (req, res) => {
 app.post('/api/tasks', async (req, res) => {
   const { title, deadline, status } = req.body;
   try {
+    await ensureTable();
+    const cleanDeadline = deadline && deadline.trim() !== '' ? deadline : null;
     const result = await pool.query(
       'INSERT INTO tasks (title, deadline, status) VALUES ($1, $2, $3) RETURNING *',
-      [title, deadline, status || 'Pending']
+      [title, cleanDeadline, status || 'Pending']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
